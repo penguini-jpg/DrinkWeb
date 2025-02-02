@@ -1,0 +1,261 @@
+<!-- File: public/random-timer.html
+     Title: Drink Timer - Drinking Mini Games
+     Description: Implements the Drink Timer game. It uses saved timer settings to start two countdown timers:
+                  - The visible main timer: When it expires, it announces "All players drink!" (spoken aloud if game audio is enabled) and resets automatically.
+                  - An optional special timer: When it expires, it randomly picks one of the selected special items.
+                    If that item is "Random player drinks" or "Random layer chooses," a random player from the players list is chosen to drink,
+                    and that player's drink counter is incremented appropriately. Otherwise, the special message is displayed and spoken.
+                  Below the timer, the list of players is shown (each displayed in an oval with two score circles for drinks and wins).
+                  A "Reset Timer" button resets both timers.
+                  A header "Games Menu" button returns the user to the games menu.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drink Timer - Drinking Mini Games</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <style>
+    /* Updated Timer Game Styles */
+    #timer-container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+    }
+    #countdown {
+      font-size: 3em;
+      margin: 20px 0;
+    }
+    #instruction {
+      font-size: 2em;
+      color: #c00;
+      margin: 20px 0;
+    }
+    #controls {
+      margin-top: 20px;
+    }
+    #controls button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #ffcc00;
+      color: #fff;
+    }
+    #controls button:hover {
+      background-color: #e6b800;
+    }
+    #players-list {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Drink Timer</h1>
+    <!-- Games Menu button to return to the games menu -->
+    <button onclick="window.location.href='game-home.html'">Games Menu</button>
+  </header>
+  <main id="timer-container">
+    <div id="countdown">--:--</div>
+    <div id="instruction"></div>
+    <div id="controls">
+      <button onclick="resetTimers()">Reset Timer</button>
+      <!-- Note: The Random Player Drinks button has been removed.
+           Its functionality is now part of the special timer event. -->
+    </div>
+    <div id="players-list">
+      <!-- Player listing will be loaded here -->
+    </div>
+  </main>
+  
+  <script>
+    // Load timer settings from localStorage; use default values if none are saved.
+    const timerSettings = JSON.parse(localStorage.getItem("timerSettings")) || {
+      bgImage: "../assets/images/timer.jpeg", // Default background image
+      mainMin: 60,
+      mainMax: 300,
+      specialEnabled: false,
+      specialMin: 15,
+      specialMax: 60,
+      specialItems: [],
+      gameAudio: false
+    };
+    
+    // Set the background image of the timer container.
+    document.getElementById("timer-container").style.backgroundImage = "url('" + timerSettings.bgImage + "')";
+    
+    // Main timer variables
+    let mainTime = getRandomTime(timerSettings.mainMin, timerSettings.mainMax);
+    let mainInterval;
+    
+    // Special timer variables (if enabled)
+    let specialInterval;
+    let specialTime = timerSettings.specialEnabled ? getRandomTime(timerSettings.specialMin, timerSettings.specialMax) : null;
+    
+    const countdownElement = document.getElementById("countdown");
+    const instructionElement = document.getElementById("instruction");
+    
+    // Utility: Generate a random integer between min and max (inclusive)
+    function getRandomTime(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    // Utility: Use the Web Speech API to speak a message if game audio is enabled.
+    function speakMessage(message) {
+      if (timerSettings.gameAudio && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(message);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+    
+    // Update the main timer display in MM:SS format.
+    function updateMainDisplay() {
+      const minutes = Math.floor(mainTime / 60);
+      const seconds = mainTime % 60;
+      countdownElement.textContent = String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+    }
+    
+    // Start or restart the main timer countdown.
+    function startMainTimer() {
+      updateMainDisplay();
+      if (mainInterval) clearInterval(mainInterval);
+      mainInterval = setInterval(() => {
+        mainTime--;
+        updateMainDisplay();
+        if (mainTime <= 0) {
+          // Main timer action: all players drink.
+          instructionElement.textContent = "All players drink!";
+          speakMessage("All players drink!");
+          // Update each player's drink counter based on their drink type.
+          let players = JSON.parse(localStorage.getItem("playerDetails") || "[]");
+          players.forEach(player => {
+            if (player.drink === "Beer") {
+              player.score = (player.score || 0) + 2;
+            } else {
+              player.score = (player.score || 0) + 1;
+            }
+          });
+          localStorage.setItem("playerDetails", JSON.stringify(players));
+          displayPlayers();
+          // Reset main timer automatically.
+          mainTime = getRandomTime(timerSettings.mainMin, timerSettings.mainMax);
+          updateMainDisplay();
+          instructionElement.textContent = "";
+        }
+      }, 1000);
+    }
+    
+    // Start or restart the special timer (if enabled).
+    function startSpecialTimer() {
+      if (!timerSettings.specialEnabled) return;
+      specialTime = getRandomTime(timerSettings.specialMin, timerSettings.specialMax);
+      if (specialInterval) clearInterval(specialInterval);
+      specialInterval = setInterval(() => {
+        specialTime--;
+        if (specialTime <= 0) {
+          // When special timer expires, choose a special action.
+          let specialMessage = "";
+          let players = JSON.parse(localStorage.getItem("playerDetails") || "[]");
+          if (timerSettings.specialItems && timerSettings.specialItems.length > 0) {
+            const randomIndex = Math.floor(Math.random() * timerSettings.specialItems.length);
+            specialMessage = timerSettings.specialItems[randomIndex];
+            // If the special message indicates a random player should drink, handle it:
+            if (specialMessage.toLowerCase().includes("random player drinks") ||
+                specialMessage.toLowerCase().includes("random layer chooses")) {
+              if (players.length > 0) {
+                const chosenIndex = Math.floor(Math.random() * players.length);
+                const chosenPlayer = players[chosenIndex];
+                if (chosenPlayer.drink === "Beer") {
+                  chosenPlayer.score = (chosenPlayer.score || 0) + 2;
+                } else {
+                  chosenPlayer.score = (chosenPlayer.score || 0) + 1;
+                }
+                localStorage.setItem("playerDetails", JSON.stringify(players));
+                displayPlayers();
+                specialMessage = chosenPlayer.name + ", drink!";
+              }
+            }
+          } else {
+            specialMessage = "Special event triggered!";
+          }
+          instructionElement.textContent = specialMessage;
+          speakMessage(specialMessage);
+          // Clear the special instruction after 3 seconds.
+          setTimeout(() => {
+            instructionElement.textContent = "";
+          }, 3000);
+          // Reset special timer.
+          specialTime = getRandomTime(timerSettings.specialMin, timerSettings.specialMax);
+        }
+      }, 1000);
+    }
+    
+    // Reset both timers (triggered by the Reset Timer button).
+    function resetTimers() {
+      instructionElement.textContent = "";
+      mainTime = getRandomTime(timerSettings.mainMin, timerSettings.mainMax);
+      startMainTimer();
+      if (timerSettings.specialEnabled) {
+        specialTime = getRandomTime(timerSettings.specialMin, timerSettings.specialMax);
+        startSpecialTimer();
+      }
+    }
+    
+    // Display the list of players below the timer.
+    function displayPlayers() {
+      const container = document.getElementById("players-list");
+      container.innerHTML = "";
+      const players = JSON.parse(localStorage.getItem("playerDetails") || "[]");
+      players.forEach(player => {
+        const playerContainer = document.createElement("div");
+        playerContainer.className = "player-info";
+        
+        const playerOval = document.createElement("div");
+        playerOval.className = "player-oval";
+        playerOval.style.backgroundColor = player.color;
+        playerOval.textContent = player.name;
+        
+        // Score container for drinks and wins.
+        const scoreContainer = document.createElement("div");
+        scoreContainer.className = "score-container";
+        
+        const drinksCircle = document.createElement("div");
+        drinksCircle.className = "drinks-circle";
+        drinksCircle.textContent = "🍺 " + (player.score || "0");
+        
+        const winsCircle = document.createElement("div");
+        winsCircle.className = "wins-circle";
+        winsCircle.textContent = "W " + (player.wins || "0");
+        
+        scoreContainer.appendChild(drinksCircle);
+        scoreContainer.appendChild(winsCircle);
+        
+        playerContainer.appendChild(playerOval);
+        playerContainer.appendChild(scoreContainer);
+        
+        container.appendChild(playerContainer);
+      });
+    }
+    
+    // On page load, start timers and display players.
+    startMainTimer();
+    if (timerSettings.specialEnabled) {
+      startSpecialTimer();
+    }
+    displayPlayers();
+  </script>
+</body>
+</html>

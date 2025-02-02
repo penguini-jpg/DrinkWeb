@@ -1,0 +1,30 @@
+<!-- File: public/settings.html
+     Title: Settings - Drinking Mini Games
+     Description: Contains a volume slider for adjusting game volume and a Home button to return to the index screen.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Drinking Mini Games</title>
+  <!-- Since settings.html is in public folder, use ../assets/css/styles.css to get to the CSS -->
+  <link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Settings</h1>
+  </header>
+  <main>
+    <section id="volume-settings">
+      <h2>Volume Control</h2>
+      <label for="volume-slider">Game Volume:</label>
+      <input type="range" id="volume-slider" name="volume" min="0" max="100" value="50">
+      <p>Adjust the volume for the game instructions.</p>
+    </section>
+    <!-- Home button with a relative path to index.html -->
+    <button onclick="window.location.href='index.html'">Home</button>
+  </main>
+  <script src="../assets/js/script.js"></script>
+</body>
+</html>

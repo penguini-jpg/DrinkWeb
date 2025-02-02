@@ -1,0 +1,240 @@
+<!-- File: public/random-timer-settings.html
+     Title: Timer Game Settings - Drinking Mini Games
+     Description: Allows the user to customize the Timer Game settings.
+                  The user can set:
+                  - A background image URL.
+                  - Main Timer Interval: minimum and maximum seconds.
+                  - Special Interval: enable/disable via a checkbox, and set its min and max seconds.
+                  - Special items: preset options and an option to add a custom item.
+                  - Game audio enabled.
+                  When settings are saved, a "Start" button appears to begin the game.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer Game Settings - Drinking Mini Games</title>
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <style>
+    /* Styles for Timer Game Settings */
+    #timer-settings-container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 10px;
+    }
+    .setting-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .setting-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .number-inputs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .number-inputs input {
+      width: 60px;
+    }
+    .special-settings {
+      display: none;
+      margin-top: 10px;
+    }
+    .special-items {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .item-box {
+      width: 120px;
+      height: 40px;
+      border: 2px solid #000;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #aaa;
+      transition: background-color 0.2s;
+    }
+    .item-box.selected {
+      background-color: #ffcc00;
+      font-weight: bold;
+    }
+    .add-item {
+      background-color: #ddd;
+    }
+    .toggle-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+      background-color: #ffcc00;
+      color: #fff;
+    }
+    button:hover {
+      background-color: #e6b800;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Timer Game Settings</h1>
+  </header>
+  <main id="timer-settings-container">
+    <div class="setting-group">
+      <label for="bg-image">Background Image URL:</label>
+      <input type="text" id="bg-image" placeholder="Enter image URL (or leave blank for default)">
+    </div>
+    
+    <div class="setting-group">
+      <label>Main Timer Interval (seconds):</label>
+      <div class="number-inputs">
+        <input type="number" id="main-min" min="10" value="60"> 
+        <span>to</span>
+        <input type="number" id="main-max" min="10" value="300">
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label>
+        <input type="checkbox" id="enable-special"> Enable Special Interval
+      </label>
+      <div id="special-section" class="special-settings">
+        <label>Special Interval (seconds):</label>
+        <div class="number-inputs">
+          <input type="number" id="special-min" min="5" value="15"> 
+          <span>to</span>
+          <input type="number" id="special-max" min="5" value="60">
+        </div>
+        <label>Special Items:</label>
+        <div class="special-items" id="special-items">
+          <!-- Preset options -->
+          <div class="item-box preset" data-item="Random player drinks">Random player drinks</div>
+          <div class="item-box preset" data-item="Random layer chooses">Random layer chooses</div>
+          <!-- Plus box for custom item -->
+          <div class="item-box add-item" id="add-item">+</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <label>
+        <input type="checkbox" id="game-audio"> Enable Game Audio
+      </label>
+    </div>
+    
+    <button id="save-settings-btn" onclick="saveTimerSettings()">Save Settings</button>
+    <button id="start-btn" style="display:none;" onclick="window.location.href='random-timer.html'">Start</button>
+  </main>
+  
+  <!-- Custom popup for adding a custom special item -->
+  <div id="custom-item-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+       background:#fff; border:2px solid #333; padding:20px; z-index:1100;">
+    <label for="custom-item-input">Enter Custom Item:</label>
+    <input type="text" id="custom-item-input">
+    <button onclick="addCustomItem()">Submit</button>
+    <button onclick="closeCustomItemPopup()">Cancel</button>
+  </div>
+  
+  <script>
+    // Toggle special settings display based on the checkbox
+    document.getElementById("enable-special").addEventListener("change", function() {
+      const specialSection = document.getElementById("special-section");
+      if (this.checked) {
+        specialSection.classList.remove("toggle-disabled");
+        specialSection.style.display = "block";
+      } else {
+        specialSection.classList.add("toggle-disabled");
+        specialSection.style.display = "none";
+      }
+    });
+    
+    // Handle preset item selection toggling
+    document.querySelectorAll(".special-items .item-box.preset").forEach(box => {
+      box.addEventListener("click", function() {
+        this.classList.toggle("selected");
+      });
+    });
+    
+    // Handle the plus box for custom items
+    document.getElementById("add-item").addEventListener("click", function() {
+      document.getElementById("custom-item-popup").style.display = "block";
+    });
+    
+    function closeCustomItemPopup() {
+      document.getElementById("custom-item-popup").style.display = "none";
+      document.getElementById("custom-item-input").value = "";
+    }
+    
+    function addCustomItem() {
+      const text = document.getElementById("custom-item-input").value.trim();
+      if (text === "") {
+        alert("Please enter a valid item.");
+        return;
+      }
+      // Create a new item box with the entered text
+      const newBox = document.createElement("div");
+      newBox.className = "item-box custom selected";
+      newBox.dataset.item = text;
+      newBox.textContent = text;
+      newBox.addEventListener("click", function() {
+        this.classList.toggle("selected");
+      });
+      // Insert the new box before the add box
+      const specialItems = document.getElementById("special-items");
+      specialItems.insertBefore(newBox, document.getElementById("add-item"));
+      closeCustomItemPopup();
+    }
+    
+    function saveTimerSettings() {
+      // Gather settings from the form
+      const bgImage = document.getElementById("bg-image").value || "../assets/images/timer.jpeg";
+      const mainMin = Number(document.getElementById("main-min").value);
+      const mainMax = Number(document.getElementById("main-max").value);
+      const specialEnabled = document.getElementById("enable-special").checked;
+      let specialMin = null, specialMax = null, specialItems = [];
+      if (specialEnabled) {
+        specialMin = Number(document.getElementById("special-min").value);
+        specialMax = Number(document.getElementById("special-max").value);
+        document.querySelectorAll("#special-items .item-box").forEach(box => {
+          if (box.classList.contains("selected") && !box.classList.contains("add-item")) {
+            specialItems.push(box.dataset.item);
+          }
+        });
+      }
+      const gameAudio = document.getElementById("game-audio").checked;
+      
+      // Save settings to localStorage
+      const timerSettings = {
+        bgImage,
+        mainMin,
+        mainMax,
+        specialEnabled,
+        specialMin,
+        specialMax,
+        specialItems,
+        gameAudio
+      };
+      localStorage.setItem("timerSettings", JSON.stringify(timerSettings));
+      
+      // After saving, hide the Save button and show the Start button.
+      document.getElementById("save-settings-btn").style.display = "none";
+      document.getElementById("start-btn").style.display = "inline-block";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Ignore node modules
+node_modules/
+
+# Ignore npm logs
+npm-debug.log*
+
+# Ignore OS files
+.DS_Store
+
+# Optionally ignore your build or other temporary folders if needed
+
