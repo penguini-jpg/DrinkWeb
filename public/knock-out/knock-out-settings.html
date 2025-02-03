@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knock Out Game Settings - Drinking Mini Games</title>
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #ko-settings-container {
+      max-width: 400px;
+      width: 90%;
+      background: #fff;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      text-align: center;
+    }
+    #ko-settings-container input[type="range"] {
+      width: 100%;
+    }
+    #ko-settings-container p {
+      margin: 10px 0;
+      font-size: 1.2em;
+    }
+    #ko-settings-container button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #ffcc00;
+      color: #fff;
+      cursor: pointer;
+    }
+    #ko-settings-container button:hover {
+      background-color: #e6b800;
+    }
+  </style>
+</head>
+<body>
+  <div id="ko-settings-container">
+    <h1>Knock Out Settings</h1>
+    <p>Robot Speed (default 300):</p>
+    <input type="range" id="speed-slider" min="150" max="600" step="10">
+    <p id="speed-value"></p>
+    <p>Gravity (default 750):</p>
+    <input type="range" id="gravity-slider" min="200" max="1500" step="10">
+    <p id="gravity-value"></p>
+    <button onclick="saveKOSettings()">Save Settings</button>
+    <button onclick="resetDefaultKOSettings()">Default Reset</button>
+    <button onclick="window.location.href='knock-out-menu.html'">Home</button>
+  </div>
+  <script>
+    const speedSlider = document.getElementById("speed-slider");
+    const speedValue = document.getElementById("speed-value");
+    const gravitySlider = document.getElementById("gravity-slider");
+    const gravityValue = document.getElementById("gravity-value");
+    
+    const DEFAULT_SPEED = 300;
+    const DEFAULT_GRAVITY = 750;
+    
+    const savedSpeed = Number(localStorage.getItem("koSpeed")) || DEFAULT_SPEED;
+    const savedGravity = Number(localStorage.getItem("koGravity")) || DEFAULT_GRAVITY;
+    speedSlider.value = savedSpeed;
+    speedValue.textContent = "Speed: " + savedSpeed;
+    gravitySlider.value = savedGravity;
+    gravityValue.textContent = "Gravity: " + savedGravity;
+    
+    speedSlider.addEventListener("input", function() {
+      speedValue.textContent = "Speed: " + this.value;
+    });
+    gravitySlider.addEventListener("input", function() {
+      gravityValue.textContent = "Gravity: " + this.value;
+    });
+    
+    function saveKOSettings() {
+      localStorage.setItem("koSpeed", speedSlider.value);
+      localStorage.setItem("koGravity", gravitySlider.value);
+      window.location.href = "knock-out-menu.html";
+    }
+    
+    function resetDefaultKOSettings() {
+      speedSlider.value = DEFAULT_SPEED;
+      speedValue.textContent = "Speed: " + DEFAULT_SPEED;
+      gravitySlider.value = DEFAULT_GRAVITY;
+      gravityValue.textContent = "Gravity: " + DEFAULT_GRAVITY;
+    }
+  </script>
+</body>
+</html>

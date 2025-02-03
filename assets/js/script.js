@@ -1,9 +1,8 @@
 /* File: assets/js/script.js
    Title: Basic Interactivity for Drinking Mini Games Pages
-   Description: Contains JavaScript functions to navigate between pages and manage interactive controls.
+   Description: Contains functions to navigate between pages and manage interactive controls.
 */
 
-/* Navigation Functions */
 function navigateToGameHome() {
   window.location.href = "game-home.html";
 }
@@ -16,7 +15,6 @@ function goBack() {
   window.location.href = "index.html";
 }
 
-/* Game Home Screen Interactivity Functions */
 function increasePlayerCount() {
   const playerCountBtn = document.getElementById("player-count");
   let currentCount = parseInt(playerCountBtn.textContent, 10);
@@ -35,10 +33,9 @@ function decreasePlayerCount() {
 
 function editPlayerSettings() {
   const playerCount = document.getElementById("player-count").textContent;
-  window.location.href = "player-edit.html?players=" + playerCount;
+  window.location.href = "players-edit.html?players=" + playerCount;
 }
 
-/* Update game button availability based on player count */
 function updateGameAvailability() {
   const playerCount = parseInt(document.getElementById("player-count").textContent, 10);
   const gameButtons = document.querySelectorAll(".game-button");
@@ -57,22 +54,20 @@ function updateGameAvailability() {
   });
 }
 
-/* Handle game selection */
 function selectGame(gameName) {
   if (gameName === "tic-tac-toe") {
-    window.location.href = "tic-tac-toe.html";
+    window.location.href = "tic-tac-toe/tic-tac-toe.html";
   } else if (gameName === "roulette") {
     alert("Roulette game not implemented yet.");
   } else if (gameName === "knock-out") {
-    alert("Knock Out game not implemented yet.");
+    window.location.href = "knock-out/knock-out-menu.html";
   } else if (gameName === "random-timer") {
-    window.location.href = "random-timer-settings.html";
+    window.location.href = "random-timer/random-timer.html";
   } else if (gameName === "rock-paper-scissors") {
     alert("Rock Paper Scissors game not implemented yet.");
   }
 }
 
-/* Display player details on the game home screen with two stacked score circles */
 function displayPlayerDetails() {
   const container = document.getElementById("player-display");
   container.innerHTML = "";
@@ -80,33 +75,22 @@ function displayPlayerDetails() {
   players.forEach(player => {
     const playerContainer = document.createElement("div");
     playerContainer.className = "player-info";
-    
-    // Player name oval
     const playerOval = document.createElement("div");
     playerOval.className = "player-oval";
     playerOval.style.backgroundColor = player.color;
     playerOval.textContent = player.name;
-    
-    // Score container for two stacked circles
     const scoreContainer = document.createElement("div");
     scoreContainer.className = "score-container";
-    
-    // Top circle: Drinks score with beer emoji
     const drinksCircle = document.createElement("div");
     drinksCircle.className = "drinks-circle";
     drinksCircle.textContent = "🍺 " + (player.score || "0");
-    
-    // Bottom circle: Wins count with diagonal "W" in green
     const winsCircle = document.createElement("div");
     winsCircle.className = "wins-circle";
     winsCircle.textContent = "W " + (player.wins || "0");
-    
     scoreContainer.appendChild(drinksCircle);
     scoreContainer.appendChild(winsCircle);
-    
     playerContainer.appendChild(playerOval);
     playerContainer.appendChild(scoreContainer);
-    
     container.appendChild(playerContainer);
   });
 }

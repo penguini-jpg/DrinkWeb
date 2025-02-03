@@ -1,11 +1,3 @@
-<!-- File: public/game-home.html
-     Title: Game Home Screen for Drinking Mini Games
-     Description: Allows the user to select a game, adjust the number of players, and edit player details.
-                  Game buttons are highlighted if the current player count is within the allowed range.
-                  The player display section shows each player's name in an oval with two stacked score circles:
-                  one for drinks (with a beer emoji) and one for wins (displaying a diagonal "W").
-                  A Back to Index button is provided.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,7 +11,6 @@
     <h1>Select Your Game</h1>
   </header>
   <main>
-    <!-- Player Count Section -->
     <section id="player-settings">
       <div id="player-count-controls">
         <button id="decrease-player" onclick="decreasePlayerCount()">&#8592;</button>
@@ -28,53 +19,44 @@
       </div>
       <p id="drink-type-display">Drink: Beer</p>
     </section>
-    <!-- Game Selection Section -->
     <section id="game-selection">
-      <!-- Tic Tac Toe -->
       <div class="game-button" data-game="tic-tac-toe" data-min="1" data-max="2" onclick="selectGame('tic-tac-toe')">
         <img src="../assets/images/tictactoe.jpeg" alt="Tic Tac Toe" class="game-image">
         <p>Tic Tac Toe</p>
         <p class="game-range">Players: 1-2</p>
       </div>
-      <!-- Roulette -->
       <div class="game-button" data-game="roulette" data-min="2" data-max="10" onclick="selectGame('roulette')">
         <img src="../assets/images/roulette.jpeg" alt="Roulette" class="game-image">
         <p>Roulette</p>
         <p class="game-range">Players: 2+</p>
       </div>
-      <!-- Knock Out -->
-      <div class="game-button" data-game="knock-out" data-min="2" data-max="10" onclick="selectGame('knock-out')">
+      <div class="game-button" data-game="knock-out" data-min="1" data-max="2" onclick="selectGame('knock-out')">
         <img src="../assets/images/knockout.jpeg" alt="Knock Out" class="game-image">
         <p>Knock Out</p>
-        <p class="game-range">Players: 2+</p>
+        <p class="game-range">Players: 1-2</p>
       </div>
-      <!-- Random Timer -->
       <div class="game-button" data-game="random-timer" data-min="1" data-max="10" onclick="selectGame('random-timer')">
         <img src="../assets/images/timer.jpeg" alt="Random Timer" class="game-image">
         <p>Random Timer</p>
         <p class="game-range">Players: 1-10</p>
       </div>
-      <!-- Rock Paper Scissors -->
       <div class="game-button" data-game="rock-paper-scissors" data-min="1" data-max="2" onclick="selectGame('rock-paper-scissors')">
         <img src="../assets/images/rock paper scissors.jpeg" alt="Rock Paper Scissors" class="game-image">
         <p>Rock Paper Scissors</p>
         <p class="game-range">Players: 1-2</p>
       </div>
     </section>
-    <!-- Player Details Display Section -->
     <section id="player-display">
-      <!-- Player details (name oval with two stacked score circles) will be loaded here -->
+      <!-- Player details loaded via script -->
     </section>
-    <!-- Back Button to return to index screen -->
-    <button id="back-to-index" onclick="window.location.href='../public/index.html'">Back to Index</button>
+    <!-- Since game-home.html is in public, index.html is in the same folder -->
+    <button id="back-to-index" onclick="window.location.href='index.html'">Back to Index</button>
   </main>
   <script src="../assets/js/script.js"></script>
   <script>
     window.onload = function() {
       const savedCount = localStorage.getItem("playerCount");
-      if (savedCount) {
-        document.getElementById("player-count").textContent = savedCount;
-      }
+      if (savedCount) { document.getElementById("player-count").textContent = savedCount; }
       updateGameAvailability();
       displayPlayerDetails();
     };

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knock Out - Drinking Mini Games</title>
+  <!-- Use absolute paths so assets load correctly -->
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #222;
+    }
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    /* Popup styling */
+    #ko-popup {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -30%);
+      background: #fff;
+      border: 2px solid #333;
+      padding: 20px;
+      z-index: 1000;
+      text-align: center;
+      display: none;
+    }
+    #ko-popup button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #ffcc00;
+      color: #fff;
+    }
+    #menu-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #ffcc00;
+      color: #fff;
+      z-index: 1100;
+    }
+    #menu-button:hover {
+      background-color: #e6b800;
+    }
+    /* UI for player names, health bars, wins and round counter */
+    .ui-container {
+      position: absolute;
+      width: 100%;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      color: #fff;
+      font-size: 18px;
+      font-family: Arial, sans-serif;
+      z-index: 1100;
+    }
+    .player-ui {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .player-ui.right {
+      align-items: flex-end;
+    }
+    .health-bar {
+      width: 200px;
+      height: 20px;
+      background-color: green;
+      margin-top: 5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .health-fill {
+      height: 100%;
+      background-color: green;
+    }
+    .wins-counter {
+      margin-top: 5px;
+    }
+    .round-counter {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+    }
+  </style>
+  <!-- Include Phaser 3 and SoundManager -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <script src="/assets/js/soundManager.js"></script>
+</head>
+<body>
+  <button id="menu-button" onclick="window.location.href='knock-out-menu.html'">Game Menu</button>
+  <!-- UI: Player names, health bars, wins, and round counter -->
+  <div class="ui-container">
+    <div class="player-ui" id="player1-ui">
+      <div id="player1-name">Player 1</div>
+      <div class="health-bar" id="player1-health">
+        <div class="health-fill" id="player1-health-fill" style="width: 200px; float: right;"></div>
+      </div>
+      <div class="wins-counter" id="player1-wins">Wins: 0</div>
+    </div>
+    <div class="round-counter" id="round-counter">Round: 1</div>
+    <div class="player-ui right" id="player2-ui">
+      <div id="player2-name">Player 2</div>
+      <div class="health-bar" id="player2-health">
+        <div class="health-fill" id="player2-health-fill" style="width: 200px; float: left;"></div>
+      </div>
+      <div class="wins-counter" id="player2-wins">Wins: 0</div>
+    </div>
+  </div>
+  <div id="game-container"></div>
+  <div id="ko-popup">
+    <p id="popup-message"></p>
+    <button onclick="restartGame()">Play Again</button>
+    <button onclick="window.location.href='knock-out-menu.html'">Game Menu</button>
+  </div>
+  <script>
+    // --- Helper: Create a "bubbly" character using circles ---
+    function createBubblyCharacter(scene, x, y, color) {
+      let container = scene.add.container(x, y);
+
+      // Draw parts using Phaser Graphics:
+      let body = scene.add.graphics();
+      body.fillStyle(color, 1);
+      body.fillCircle(0, 0, 50);  // Body (radius 50)
+
+      let head = scene.add.graphics();
+      head.fillStyle(color, 1);
+      head.fillCircle(0, -70, 30); // Head (radius 30)
+
+      let leftArm = scene.add.graphics();
+      leftArm.fillStyle(color, 1);
+      leftArm.fillCircle(-60, -10, 15); // Left arm (radius 15)
+
+      let rightArm = scene.add.graphics();
+      rightArm.fillStyle(color, 1);
+      rightArm.fillCircle(60, -10, 15); // Right arm (radius 15)
+
+      let leftLeg = scene.add.graphics();
+      leftLeg.fillStyle(color, 1);
+      leftLeg.fillCircle(-20, 60, 15); // Left leg (radius 15)
+
+      let rightLeg = scene.add.graphics();
+      rightLeg.fillStyle(color, 1);
+      rightLeg.fillCircle(20, 60, 15); // Right leg (radius 15)
+
+      container.add([body, head, leftArm, rightArm, leftLeg, rightLeg]);
+
+      // Save original arm positions for punching animation.
+      container.setData('leftArmPos', { x: -60, y: -10 });
+      container.setData('rightArmPos', { x: 60, y: -10 });
+      // Store last movement direction; default is 1 (right).
+      container.setData('lastDirection', 1);
+
+      return {
+        container: container,
+        head: head,
+        leftArm: leftArm,
+        rightArm: rightArm
+      };
+    }
+
+    // --- Helper: Attempt Punch based on last movement direction ---
+    // The arm on the side of the last movement is used.
+    function attemptPunch(characterParts, scene) {
+      let lastDir = characterParts.container.getData('lastDirection'); // -1 for left, 1 for right
+      let duration = 100; // Tween duration (ms)
+      if (lastDir === -1) {
+        let orig = characterParts.container.getData('leftArmPos');
+        scene.tweens.add({
+          targets: characterParts.leftArm,
+          x: orig.x - 96,
+          y: characterParts.head.y,
+          duration: duration,
+          yoyo: true
+        });
+      } else {
+        let orig = characterParts.container.getData('rightArmPos');
+        scene.tweens.add({
+          targets: characterParts.rightArm,
+          x: orig.x + 96,
+          y: characterParts.head.y,
+          duration: duration,
+          yoyo: true
+        });
+      }
+    }
+
+    // --- Helper: Check for punch hit ---
+    // If the extended hand of the attacker (using the arm corresponding to lastDirection)
+    // intersects the target's body area, deduct 5% health.
+    function checkPunchHit(attackerParts, targetParts, scene) {
+      let lastDir = attackerParts.container.getData('lastDirection');
+      let arm = lastDir === -1 ? attackerParts.leftArm : attackerParts.rightArm;
+      let attackerX = attackerParts.container.x + arm.x;
+      let attackerY = attackerParts.container.y + arm.y;
+      // Define a circle around the hand.
+      let handCircle = new Phaser.Geom.Circle(attackerX, attackerY, 10);
+      // Define the target's body as a rectangle centered on its container.
+      let targetRect = new Phaser.Geom.Rectangle(targetParts.container.x - 50, targetParts.container.y - 50, 100, 100);
+      if (Phaser.Geom.Intersects.CircleToRectangle(handCircle, targetRect)) {
+        reduceHealth(targetParts, 5, scene);
+      }
+    }
+
+    // --- Helper: Reduce health and update UI ---
+    function reduceHealth(targetParts, damagePercent, scene) {
+      if (targetParts === scene.player1Parts) {
+        scene.player1Health = Math.max(scene.player1Health - damagePercent, 0);
+      } else {
+        scene.player2Health = Math.max(scene.player2Health - damagePercent, 0);
+      }
+      updateUI(scene);
+    }
+
+    // --- Helper: Update UI for health bars, wins and round counter ---
+    function updateUI(scene) {
+      let p1HealthFill = document.getElementById("player1-health-fill");
+      let p1Health = scene.player1Health;
+      let p1Width = (p1Health / 100) * scene.maxHealthBarWidth;
+      p1HealthFill.style.width = p1Width + "px";
+      if (p1Health > 50) {
+        p1HealthFill.style.backgroundColor = "green";
+      } else if (p1Health > 25) {
+        p1HealthFill.style.backgroundColor = "yellow";
+      } else {
+        p1HealthFill.style.backgroundColor = "red";
+      }
+      let p2HealthFill = document.getElementById("player2-health-fill");
+      let p2Health = scene.player2Health;
+      let p2Width = (p2Health / 100) * scene.maxHealthBarWidth;
+      p2HealthFill.style.width = p2Width + "px";
+      if (p2Health > 50) {
+        p2HealthFill.style.backgroundColor = "green";
+      } else if (p2Health > 25) {
+        p2HealthFill.style.backgroundColor = "yellow";
+      } else {
+        p2HealthFill.style.backgroundColor = "red";
+      }
+      document.getElementById("round-counter").textContent = "Round: " + scene.roundNumber;
+      document.getElementById("player1-wins").textContent = "Wins: " + scene.player1Wins;
+      document.getElementById("player2-wins").textContent = "Wins: " + scene.player2Wins;
+    }
+
+    // --- Bubbly Scene for Knock Out Game ---
+    class BubblyScene extends Phaser.Scene {
+      constructor() {
+        super("BubblyScene");
+      }
+      preload() {
+        // Preload knockout audio.
+        this.load.audio('KnockoutTheme', '/audio/knock-out-audio/music/Knockout Theme.wav');
+        this.load.audio('KnockoutStart', '/audio/knock-out-audio/sounds/Knockout Game Start.wav');
+        this.load.audio('DieSound', '/audio/knock-out-audio/sounds/Die Sound 1.wav');
+      }
+      create() {
+        // Stop global audio.
+        let globalAudio = document.getElementById("bg-music");
+        if (globalAudio) { globalAudio.pause(); }
+        this.soundManager = new SoundManager(this);
+        this.soundManager.playBackgroundMusic('KnockoutTheme');
+        this.soundManager.playSoundEffect('KnockoutStart');
+
+        // Set up physics world and floor.
+        this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
+        this.floor = this.add.rectangle(this.scale.width/2, this.scale.height - 48, this.scale.width, 96, 0x654321);
+        this.physics.add.existing(this.floor, true);
+        this.physics.world.gravity.y = 750;
+
+        // Create two characters.
+        // Player 1 (blue) on the left.
+        this.player1Parts = createBubblyCharacter(this, this.scale.width * 0.3, this.scale.height * 0.7, 0x0099ff);
+        this.physics.add.existing(this.player1Parts.container);
+        this.player1Parts.container.body.setCollideWorldBounds(true);
+        this.physics.add.collider(this.player1Parts.container, this.floor);
+        // Set initial lastDirection for player1 to right.
+        this.player1Parts.container.setData('lastDirection', 1);
+
+        // Player 2 (red) on the right.
+        this.player2Parts = createBubblyCharacter(this, this.scale.width * 0.7, this.scale.height * 0.7, 0xff6600);
+        this.physics.add.existing(this.player2Parts.container);
+        this.player2Parts.container.body.setCollideWorldBounds(true);
+        this.physics.add.collider(this.player2Parts.container, this.floor);
+        // Set initial lastDirection for player2 to left.
+        this.player2Parts.container.setData('lastDirection', -1);
+
+        // Collide the two players.
+        this.physics.add.collider(this.player1Parts.container, this.player2Parts.container);
+
+        // Initialize health and wins.
+        this.player1Health = 100;
+        this.player2Health = 100;
+        this.maxHealthBarWidth = 200;
+        this.player1Wins = 0;
+        this.player2Wins = 0;
+        this.roundNumber = 1;
+        updateUI(this);
+
+        // --- Input Setup ---
+        // Player 1 controls: W, A, S, D for movement and TAB for punch.
+        this.player1Keys = this.input.keyboard.addKeys({
+          up: Phaser.Input.Keyboard.KeyCodes.W,
+          left: Phaser.Input.Keyboard.KeyCodes.A,
+          down: Phaser.Input.Keyboard.KeyCodes.S,
+          right: Phaser.Input.Keyboard.KeyCodes.D,
+          punch: Phaser.Input.Keyboard.KeyCodes.TAB
+        });
+        // Player 2 controls: Arrow keys for movement and COMMA for punch.
+        this.player2Keys = {
+          up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP),
+          left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
+          down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN),
+          right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT),
+          punch: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.COMMA)
+        };
+
+        // Display on-screen instructions near the bottom.
+        this.add.text(this.scale.width/2, this.scale.height - 30,
+          "P1: W,A,S,D & TAB | P2: Arrow keys & COMMA", { fontSize: '20px', fill: '#fff' }
+        ).setOrigin(0.5);
+
+        this.gameEnded = false;
+      }
+      update() {
+        // --- Process Player 1 Controls ---
+        let p1Body = this.player1Parts.container.body;
+        p1Body.setVelocityX(0);
+        if (this.player1Keys.left.isDown) {
+          p1Body.setVelocityX(-300);
+          this.player1Parts.container.setData('lastDirection', -1);
+        } else if (this.player1Keys.right.isDown) {
+          p1Body.setVelocityX(300);
+          this.player1Parts.container.setData('lastDirection', 1);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.player1Keys.up) && p1Body.blocked.down) {
+          p1Body.setVelocityY(-400);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.player1Keys.punch)) {
+          attemptPunch(this.player1Parts, this);
+          checkPunchHit(this.player1Parts, this.player2Parts, this);
+        }
+
+        // --- Process Player 2 Controls ---
+        let p2Body = this.player2Parts.container.body;
+        p2Body.setVelocityX(0);
+        if (this.player2Keys.left.isDown) {
+          p2Body.setVelocityX(-300);
+          this.player2Parts.container.setData('lastDirection', -1);
+        } else if (this.player2Keys.right.isDown) {
+          p2Body.setVelocityX(300);
+          this.player2Parts.container.setData('lastDirection', 1);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.player2Keys.up) && p2Body.blocked.down) {
+          p2Body.setVelocityY(-400);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.player2Keys.punch)) {
+          attemptPunch(this.player2Parts, this);
+          checkPunchHit(this.player2Parts, this.player1Parts, this);
+        }
+      }
+    }
+
+    // --- Phaser configuration ---
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: "#222",
+      physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 750 }, debug: false }
+      },
+      scene: BubblyScene
+    };
+
+    const game = new Phaser.Game(config);
+
+    // --- Restart function for popup ---
+    function restartGame() {
+      game.scene.getScene("BubblyScene").restart();
+      document.getElementById("ko-popup").style.display = "none";
+    }
+  </script>
+</body>
+</html>

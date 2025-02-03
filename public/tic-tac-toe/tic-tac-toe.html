@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe - Drinking Mini Games</title>
+  <!-- In tic-tac-toe folder, assets are two levels up -->
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <style>
+    body, html { margin: 0; padding: 0; overflow: hidden; background: #000; }
+  </style>
+  <!-- Include Phaser 3 and SoundManager with proper relative path -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <script src="../../assets/js/soundManager.js"></script>
+</head>
+<body>
+  <button onclick="window.location.href='../game-home.html'">Game Menu</button>
+  <div id="game-container"></div>
+  <script>
+    class TicTacToeScene extends Phaser.Scene {
+      constructor() { 
+        super("TicTacToeScene"); 
+      }
+      preload() {
+        // Load Tic Tac Toe theme from audio/tic-tac-toe-audio/music/
+        this.load.audio('TicTacToeTheme', '../../audio/tic-tac-toe-audio/music/Tic Tac Toe Theme.wav');
+      }
+      create() {
+        let globalAudio = document.getElementById("bg-music");
+        if (globalAudio) { globalAudio.pause(); }
+        this.soundManager = new SoundManager(this);
+        this.soundManager.playBackgroundMusic('TicTacToeTheme');
+        this.add.text(this.scale.width/2, this.scale.height/2, "Tic Tac Toe Game", { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+      }
+    }
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: "#000",
+      scene: TicTacToeScene
+    };
+    // Save the game instance globally so that game.scene.restart() works
+    window.game = new Phaser.Game(config);
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knock Out Game Menu - Drinking Mini Games</title>
+  <!-- In knock-out folder, assets are two levels up -->
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    #ko-menu-container {
+      text-align: center;
+    }
+    #ko-menu-container img {
+      max-width: 90vw;
+      max-height: 60vh;
+      object-fit: contain;
+    }
+    #ko-menu-container .button-group {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #ko-menu-container button {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #ffcc00;
+      color: #fff;
+    }
+    #ko-menu-container button:hover {
+      background-color: #e6b800;
+    }
+  </style>
+</head>
+<body>
+  <div id="ko-menu-container">
+    <img src="../../assets/images/knockout.jpeg" alt="Knock Out Menu">
+    <div class="button-group">
+      <button onclick="window.location.href='knock-out.html'">Play</button>
+      <button onclick="window.location.href='knock-out-settings.html'">Game Settings</button>
+      <button onclick="window.location.href='../game-home.html'">Home</button>
+    </div>
+  </div>
+  <script>
+    // Stop global audio.
+    let globalAudio = document.getElementById("bg-music");
+    if (globalAudio) { globalAudio.pause(); }
+    // Create and play the knockout theme.
+    let knockoutAudio = document.getElementById("knockout-music");
+    if (!knockoutAudio) {
+      knockoutAudio = document.createElement("audio");
+      knockoutAudio.id = "knockout-music";
+      // Knockout theme is in audio/knock-out-audio/music/
+      knockoutAudio.src = "../../audio/knock-out-audio/music/Knockout Theme.wav";
+      knockoutAudio.loop = true;
+      knockoutAudio.volume = 0.5;
+      document.body.appendChild(knockoutAudio);
+    }
+    knockoutAudio.play().catch(err => console.error("Knockout theme playback failed:", err));
+  </script>
+  <script src="../../assets/js/script.js"></script>
+</body>
+</html>

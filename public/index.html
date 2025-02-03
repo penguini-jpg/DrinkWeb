@@ -1,14 +1,10 @@
-<!-- File: public/index.html
-     Title: Drinking Mini Games - Home
-     Description: The home screen displays the index banner image, title "Drinking Mini Games", an animated PLAY button,
-                  and a static Settings button.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Drinking Mini Games - Home</title>
+  <!-- Global pages: assets folder is one level up -->
   <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
@@ -17,9 +13,16 @@
     <h1>Drinking Mini Games</h1>
   </header>
   <main>
-    <button id="play-button" onclick="navigateToGameHome()">PLAY</button>
-    <button id="settings-button" onclick="navigateToSettings()">Settings</button>
+    <button id="play-button" onclick="startApp()">PLAY</button>
+    <button id="settings-button" onclick="window.location.href='settings.html'">Settings</button>
   </main>
+  <script>
+    function startApp() {
+      localStorage.setItem("bgMusicStarted", "true");
+      window.location.href = "game-home.html";
+    }
+  </script>
+  <script src="../assets/js/globalAudio.js"></script>
   <script src="../assets/js/script.js"></script>
 </body>
 </html>
